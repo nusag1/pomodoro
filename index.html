@@ -102,6 +102,7 @@ h2:first-child { margin-top: 8px; }
 .btn.gold { background: var(--gold); color: #2a1d00; }
 .btn.ghost { background: transparent; border: 1px solid var(--line); }
 .btn.sm { min-height: 38px; padding: 6px 14px; font-size: 14px; }
+.btn.sm.sq { padding: 6px 11px; min-width: 40px; }
 .btn.block { width: 100%; }
 .iconbtn { border: 0; background: transparent; width: 40px; height: 40px; border-radius: 10px; color: var(--muted); font-size: 18px; flex: none; }
 .iconbtn:hover { background: var(--bg-2); }
@@ -192,13 +193,49 @@ details.done-list summary { cursor: pointer; color: var(--muted); padding: 8px 0
 .seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 14px; min-height: 36px; }
 .seg button.on { background: var(--card); box-shadow: var(--shadow); font-weight: 700; }
 
+/* 今日の3つ */
+.three { margin: 4px 0 6px; }
+.three .lbl { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 4px; }
+.three ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.three li button { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 8px 12px; display: flex; gap: 8px; align-items: center; min-height: 44px; }
+.three li button.sel { border-color: var(--tomato); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tomato) 35%, transparent); }
+.three li button.fin { color: var(--muted); text-decoration: line-through; }
+.three li button .tt { flex: 1; min-width: 0; word-break: break-word; font-weight: 700; }
+.three li button .n { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.three .hint { font-size: 13px; color: var(--muted); text-align: center; }
+.star { color: var(--gold) !important; }
+.est-hint { font-size: 13px; color: var(--muted); background: var(--bg-2); border-radius: 10px; padding: 8px 10px; }
+.est-hint[hidden] { display: none; }
+
+/* ふり返り */
+.streak { display: flex; align-items: center; gap: 14px; }
+.streak .fire { font-size: 42px; line-height: 1; }
+.streak .big { font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stats4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 130px; padding-top: 16px; }
+.bars .b { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; height: 100%; gap: 2px; font-size: 12px; }
+.bars .b .v { font-variant-numeric: tabular-nums; color: var(--muted); }
+.bars .b .col { width: 70%; max-width: 34px; align-self: end; background: var(--tomato); border-radius: 6px 6px 2px 2px; min-height: 2px; }
+.bars .b .col.zero { background: var(--ring-bg); }
+.bars .b.today .d { font-weight: 900; color: var(--ink); }
+.bars .b .d { color: var(--muted); }
+.cmp li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.cmp li:last-child { border-bottom: 0; }
+.cmp .tt { word-break: break-word; min-width: 0; }
+.cmp .r { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cmp .r.over { color: var(--danger); } .cmp .r.under { color: var(--leaf); }
+.did li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.did li:last-child { border-bottom: 0; }
+.did .tt { word-break: break-word; min-width: 0; }
+.msg { background: var(--leaf-soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-top: 10px; }
+
 /* 下のナビ */
 nav.tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
   background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
 }
-nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
 nav.tabs button { border: 0; background: transparent; border-radius: 12px; padding: 6px 2px; display: grid; justify-items: center; gap: 0; font-size: 12px; color: var(--muted); min-height: 52px; }
 nav.tabs button .ic { font-size: 20px; line-height: 1.3; }
 nav.tabs button.on { color: var(--tomato); font-weight: 700; background: var(--tomato-soft); }
@@ -251,6 +288,7 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
       </div>
     </div>
     <div class="dots" id="dots" aria-label="長い休憩までの進み"></div>
+    <div class="three" id="three"></div>
     <div class="now-task">
       <div class="lbl">いまやること</div>
       <div class="ttl" id="nowTitle">—</div>
@@ -283,8 +321,10 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
         </div>
         <button class="btn primary" type="submit">追加</button>
       </div>
+      <div class="est-hint" id="estHint" hidden></div>
     </form>
     <h2>リスト</h2>
+    <p class="small muted" style="margin:-4px 2px 10px">☆を押すと「今日の3つ」に入ります。たくさんあっても、今日やるのは3つだけ。</p>
     <ul class="list" id="taskList"></ul>
     <details class="done-list" id="doneWrap">
       <summary>完了したもの（<span id="doneCount">0</span>）</summary>
@@ -328,6 +368,37 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
     <div class="card"><ul class="list hist" id="ledger"></ul></div>
   </section>
 
+  <!-- ふり返り -->
+  <section class="view" id="v-review" aria-label="ふり返り">
+    <h2>連続日数</h2>
+    <div class="card streak">
+      <div class="fire" id="rvFire">🔥</div>
+      <div>
+        <div class="big"><span id="rvStreak">0</span><span style="font-size:18px"> 日連続</span></div>
+        <div class="small muted" id="rvStreakSub"></div>
+      </div>
+    </div>
+    <h2>今日のふり返り</h2>
+    <div class="stats4">
+      <div class="stat"><b id="rvPomo">0</b><span>集中した🍅</span></div>
+      <div class="stat"><b id="rvMin">0</b><span>集中した(分)</span></div>
+      <div class="stat"><b id="rvDone">0</b><span>完了したこと</span></div>
+      <div class="stat"><b id="rvGuard">0</b><span>🛡 離れなかった🍅</span></div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div class="small muted">今日やったこと</div>
+      <ul class="list did" id="rvDid"></ul>
+      <div class="msg" id="rvMsg"></div>
+    </div>
+    <h2>この7日間の🍅</h2>
+    <div class="card"><div class="bars" id="rvBars"></div></div>
+    <h2>見積もりと実際</h2>
+    <div class="card">
+      <div id="rvEstSum" class="small"></div>
+      <ul class="list cmp" id="rvCmp" style="margin-top:6px"></ul>
+    </div>
+  </section>
+
   <!-- 設定 -->
   <section class="view" id="v-settings" aria-label="設定">
     <h2>時間</h2>
@@ -344,6 +415,13 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
       <label class="set-row"><span>1ポモでもらえるpt</span><input class="num" type="number" data-set="ptPomo" min="0" max="999" inputmode="numeric"></label>
       <label class="set-row"><span>タスク完了でもらえるpt</span><input class="num" type="number" data-set="ptDone" min="0" max="999" inputmode="numeric"></label>
       <div class="set-row"><span>完了したらガチャ券をもらう</span><label class="switch"><input type="checkbox" data-set="gacha" aria-label="ガチャ券"><i></i></label></div>
+      <label class="set-row"><span>「今日の3つ」ぜんぶ完了でもらえるpt</span><input class="num" type="number" data-set="ptThree" min="0" max="999" inputmode="numeric"></label>
+    </div>
+    <h2>集中を守る</h2>
+    <div class="card set-grid">
+      <div class="set-row"><span>集中中にほかの画面へ行ったら、やさしく声をかける</span><label class="switch"><input type="checkbox" data-set="guard" aria-label="集中を守る"><i></i></label></div>
+      <label class="set-row"><span>1回も離れなかったポモのボーナスpt</span><input class="num" type="number" data-set="ptGuard" min="0" max="999" inputmode="numeric"></label>
+      <p class="small muted" style="margin:0">3秒以上ほかのタブやアプリに行くと「離れた」に数えます。スマホで画面を消したときも数えるので、上の「画面をつけたままにする」と一緒に使うのがおすすめです。</p>
     </div>
     <h2>お知らせ</h2>
     <div class="card set-grid">
@@ -378,6 +456,7 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
     <button type="button" data-tab="timer" class="on"><span class="ic">⏱️</span>タイマー</button>
     <button type="button" data-tab="tasks"><span class="ic">📝</span>やること</button>
     <button type="button" data-tab="rewards"><span class="ic badge" id="navBadge">🎁</span>ごほうび</button>
+    <button type="button" data-tab="review"><span class="ic">📊</span>ふり返り</button>
     <button type="button" data-tab="settings"><span class="ic">⚙️</span>設定</button>
   </div>
 </nav>
@@ -404,9 +483,11 @@ const MIN = 60000 / FAST;
 const DEF_SETTINGS = {
   focus: 25, short: 5, long: 15, longEvery: 4,
   autoBreak: true, wakeLock: false,
-  ptPomo: 10, ptDone: 20, gacha: true,
+  ptPomo: 10, ptDone: 20, gacha: true, ptThree: 30,
+  guard: true, ptGuard: 5,
   sound: true, notify: false, theme: 'auto'
 };
+const AWAY_MIN_MS = 3000; // これより短い離脱は数えない（うっかり切りかえ用）
 const EMOJIS = ['🍰', '🎮', '📺', '☕', '🍜', '🛁', '📚', '🛍️', '😴', '🎧', '🍺', '🌳'];
 const GACHA = [ // 合計1.0。お金は一切かからない、おまけのポイント
   { p: 0.55, pt: 5, name: '小吉', em: '🍬' },
@@ -419,7 +500,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 function freshState() {
   return {
     v: 1,
-    tasks: [],      // {id,title,est,done(実ポモ数),createdAt,completedAt,today(今日の3つ用・予約)}
+    tasks: [],      // {id,title,est,done(実ポモ数),createdAt,completedAt,today(「今日の3つ」に入れた日の dayKey)}
     rewards: [
       { id: uid(), name: 'コンビニスイーツ', cost: 30, em: '🍰' },
       { id: uid(), name: 'ゲーム30分', cost: 50, em: '🎮' },
@@ -430,7 +511,8 @@ function freshState() {
     selected: null, // 選んでいるタスクID
     timer: null,    // {phase,startedAt,endsAt,pausedLeft,taskId,planned}
     next: 'focus',  // タイマーが止まっているとき、次に始めるもの
-    log: [],        // {type:'focus'|'short'|'long', taskId, planned, start, end, completed, pauses}
+    threeBonus: null, // 「今日の3つ」ボーナスをもらった日の dayKey
+    log: [],        // {type:'focus'|'short'|'long', taskId, planned, start, end, completed, pauses, leaves, away}
     ledger: [],     // {at, delta, why}
     settings: { ...DEF_SETTINGS }
   };
@@ -462,8 +544,9 @@ function normalize(d) {
   out.settings = { ...DEF_SETTINGS, ...(d.settings || {}) };
   out.tasks = d.tasks.filter(t => t && typeof t.title === 'string').map(t => ({
     id: String(t.id || uid()), title: t.title.slice(0, 80), est: clamp(+t.est || 1, 1, 20), done: Math.max(0, +t.done || 0),
-    createdAt: +t.createdAt || Date.now(), completedAt: t.completedAt ? +t.completedAt : null, today: !!t.today
+    createdAt: +t.createdAt || Date.now(), completedAt: t.completedAt ? +t.completedAt : null, today: typeof t.today === 'string' ? t.today : null
   }));
+  out.threeBonus = typeof d.threeBonus === 'string' ? d.threeBonus : null;
   out.rewards = d.rewards.filter(r => r && typeof r.name === 'string').map(r => ({
     id: String(r.id || uid()), name: r.name.slice(0, 40), cost: clamp(Math.round(+r.cost || 1), 1, 9999), em: typeof r.em === 'string' ? r.em.slice(0, 4) : '🎁'
   }));
@@ -556,8 +639,41 @@ async function syncWakeLock() {
 /* ---------- タイマー ---------- */
 function startPhase(phase, at = Date.now()) {
   const planned = durOf(phase);
-  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: phase === 'focus' ? S.selected : null, planned, pauses: 0 };
+  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: phase === 'focus' ? S.selected : null, planned, pauses: 0, leaves: 0, away: 0, hiddenAt: null };
   save(); schedule(); syncWakeLock();
+}
+
+/* ---------- 集中を守る ----------
+   集中中に画面が隠れた時刻を timer.hiddenAt に残し、戻った（または裏で終わった）ときに
+   AWAY_MIN_MS 以上なら「離れた」1回として数える。1回も離れなかったポモにはボーナス */
+let guardT = null;
+function closeAway(t, until) {
+  if (!t || !t.hiddenAt) return 0;
+  const ms = Math.max(0, until - t.hiddenAt);
+  t.hiddenAt = null;
+  if (ms < AWAY_MIN_MS) return 0;
+  t.leaves = (t.leaves || 0) + 1; t.away = (t.away || 0) + ms;
+  return ms;
+}
+function onHide() {
+  const t = S.timer;
+  if (!S.settings.guard || !t || t.phase !== 'focus' || t.pausedLeft || t.hiddenAt) return;
+  t.hiddenAt = Date.now(); save();
+  clearTimeout(guardT);
+  guardT = setTimeout(() => {
+    const t2 = S.timer;
+    if (document.visibilityState === 'hidden' && t2 && t2.phase === 'focus' && !t2.pausedLeft && t2.hiddenAt)
+      notify('🍅 集中中ですよ', 'のこり ' + fmtClock(t2.endsAt - Date.now()) + '。もどってきたら、そのまま続きを。');
+  }, 20000);
+}
+function onShow() {
+  clearTimeout(guardT);
+  const t = S.timer;
+  if (!t || !t.hiddenAt) return;
+  if (t.phase !== 'focus' || Date.now() >= t.endsAt) return; // 裏で終わっていたら reconcile が数える
+  const ms = closeAway(t, Date.now());
+  save();
+  if (ms) toast('おかえりなさい 🍅 のこり ' + fmtClock(t.endsAt - Date.now()) + '、ここから集中しなおそう');
 }
 function pause() {
   if (!S.timer || S.timer.pausedLeft) return;
@@ -571,7 +687,8 @@ function resume() {
   save(); schedule(); syncWakeLock(); render();
 }
 function logPhase(t, end, completed) {
-  S.log.push({ type: t.phase, taskId: t.taskId, planned: t.planned, start: t.startedAt, end, completed, pauses: t.pauses || 0 });
+  closeAway(t, end);
+  S.log.push({ type: t.phase, taskId: t.taskId, planned: t.planned, start: t.startedAt, end, completed, pauses: t.pauses || 0, leaves: t.leaves || 0, away: t.away || 0 });
   if (S.log.length > 5000) S.log.splice(0, S.log.length - 5000);
 }
 async function stopTimer() {
@@ -603,8 +720,10 @@ function reconcile() {
       const task = taskById(t.taskId);
       if (task && !task.completedAt) task.done++;
       addPoints(S.settings.ptPomo, task ? '🍅 ' + task.title : '🍅 集中');
+      const kept = S.settings.guard && !t.leaves;
+      if (kept) addPoints(S.settings.ptGuard, '🛡 離れずに集中');
       const brk = S.cycle % S.settings.longEvery === 0 ? 'long' : 'short';
-      finished.push({ phase: 'focus', taskId: t.taskId, next: brk, at: t.endsAt });
+      finished.push({ phase: 'focus', taskId: t.taskId, next: brk, at: t.endsAt, pt: S.settings.ptPomo + (kept ? S.settings.ptGuard : 0), kept, leaves: t.leaves || 0 });
       if (S.settings.autoBreak) startPhaseSilent(brk, t.endsAt); else { S.timer = null; S.next = brk; }
     } else {
       if (t.phase === 'long') S.cycle = 0;
@@ -616,7 +735,7 @@ function reconcile() {
 }
 function startPhaseSilent(phase, at) {
   const planned = durOf(phase);
-  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: null, planned, pauses: 0 };
+  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: null, planned, pauses: 0, leaves: 0, away: 0, hiddenAt: null };
 }
 
 let pendingFocusDialog = null;
@@ -627,14 +746,15 @@ function onFinished(list) {
   chime(kind);
   if (kind === 'focus') {
     const task = taskById(last.taskId);
-    notify('🍅 集中おわり！ +' + S.settings.ptPomo + 'pt', (task ? task.title + ' ・ ' : '') + (last.next === 'long' ? '長い休憩' : '休憩') + 'しましょう');
+    notify('🍅 集中おわり！ +' + last.pt + 'pt', (task ? task.title + ' ・ ' : '') + (last.next === 'long' ? '長い休憩' : '休憩') + 'しましょう');
   } else {
     notify('☕ 休憩おわり', 'つぎの集中を始めましょう');
   }
   render();
   if (focusDone.length) {
     const f = focusDone[focusDone.length - 1];
-    pendingFocusDialog = { taskId: f.taskId, count: focusDone.length, next: f.next, breakOver: last.phase !== 'focus' };
+    pendingFocusDialog = { taskId: f.taskId, count: focusDone.length, next: f.next, breakOver: last.phase !== 'focus',
+      pt: focusDone.reduce((a, x) => a + x.pt, 0), kept: focusDone.filter(x => x.kept).length, leaves: focusDone.reduce((a, x) => a + x.leaves, 0) };
     showFocusDialog();
   } else if (document.visibilityState === 'visible') {
     toast('休憩おわり！ つぎの集中へ');
@@ -644,13 +764,17 @@ function showFocusDialog() {
   const p = pendingFocusDialog; if (!p) return;
   pendingFocusDialog = null;
   const task = taskById(p.taskId);
-  const pt = S.settings.ptPomo * p.count;
+  const pt = p.pt;
+  const guardMsg = !S.settings.guard ? '' : p.kept
+    ? `<p class="small">🛡 1回も離れずに集中できました（ボーナス +${S.settings.ptGuard * p.kept}pt）</p>`
+    : `<p class="small muted">ほかの画面に ${p.leaves}回 行っていました。つぎは離れずにいけるかな？</p>`;
   const prog = task ? `<p>${esc(task.title)}<br><span class="tomatoes">${tomatoes(task)}</span> <span class="muted small">${task.done}/${task.est}ポモ</span></p>` : '';
   const brkMsg = p.breakOver ? '休憩も終わっています。つぎの集中へどうぞ。' : (S.timer ? `${PH_LABEL[S.timer.phase]}中（${S.settings[S.timer.phase]}分）` : `つぎは${PH_LABEL[p.next]}です`);
   openDlg(`
     <div class="big-emoji pop">🍅</div>
     <h3>${p.count > 1 ? p.count + 'ポモ' : '1ポモ'}おつかれさま！</h3>
     <div class="plus-pt pop">+${pt}pt</div>
+    ${guardMsg}
     ${prog}
     <p class="small muted">${brkMsg}</p>
     <div class="acts">
@@ -685,21 +809,54 @@ function completeTask(id) {
   t.completedAt = Date.now();
   addPoints(S.settings.ptDone, '✅ ' + t.title);
   if (S.settings.gacha) S.spins++;
-  if (S.selected === id) S.selected = (S.tasks.find(x => !x.completedAt) || {}).id || null;
+  const three = threeDone();
+  if (three) { S.threeBonus = dayKey(Date.now()); addPoints(S.settings.ptThree, '🌟 今日の3つ ぜんぶ完了'); }
+  if (S.selected === id) S.selected = (todayTasks().find(x => !x.completedAt) || S.tasks.find(x => !x.completedAt) || {}).id || null;
   save(); render();
   chime('focus');
+  const diff = t.done - t.est;
+  const estMsg = !t.done ? '' : diff === 0 ? 'ぴったり！見積もりどおり 🎯' : diff > 0 ? `見積もりより ${diff}ポモ多くかかりました` : `見積もりより ${-diff}ポモ早く終わりました`;
   openDlg(`
-    <div class="big-emoji pop">🎉</div>
+    <div class="big-emoji pop">${three ? '🌟' : '🎉'}</div>
     <h3>完了！よくがんばりました</h3>
     <p>${esc(t.title)}</p>
-    <p class="small muted">見積もり ${t.est}ポモ ／ 実際 ${t.done}ポモ</p>
-    <div class="plus-pt pop">+${S.settings.ptDone}pt</div>
+    <p class="small muted">見積もり ${t.est}ポモ ／ 実際 ${t.done}ポモ${estMsg ? '<br>' + estMsg : ''}</p>
+    <div class="plus-pt pop">+${S.settings.ptDone + (three ? S.settings.ptThree : 0)}pt</div>
+    ${three ? `<p><b>今日の3つ、ぜんぶ完了！</b> ボーナス +${S.settings.ptThree}pt</p>` : ''}
     ${S.settings.gacha ? '<p>おまけの <b>ガチャ券</b> を1枚もらいました</p>' : ''}
     <div class="acts">
       ${S.settings.gacha ? '<button class="btn gold" data-act="spin">🎰 いま回す</button>' : ''}
       <button class="btn ghost" data-act="close">${S.settings.gacha ? 'あとで' : 'OK'}</button>
     </div>`);
 }
+/* 今日の3つ：task.today に選んだ日の dayKey を入れる。日付が変わると自然に外れる */
+const THREE = 3;
+const todayTasks = () => { const k = dayKey(Date.now()); return S.tasks.filter(t => t.today === k); };
+function threeDone() {
+  const k = dayKey(Date.now()), list = todayTasks();
+  return S.threeBonus !== k && list.length === THREE && list.every(t => t.completedAt);
+}
+function toggleToday(id) {
+  const t = taskById(id); if (!t || t.completedAt) return;
+  const k = dayKey(Date.now());
+  if (t.today === k) t.today = null;
+  else {
+    if (todayTasks().length >= THREE) { toast('今日の3つは3つまで。どれかを外してから選んでね'); return; }
+    t.today = k;
+    if (!S.selected || !todayTasks().some(x => x.id === S.selected)) { if (!(S.timer && S.timer.phase === 'focus')) S.selected = t.id; }
+  }
+  save(); render();
+}
+
+/* 見積もりと実際：完了したタスク（1ポモ以上やったもの）の新しい20件で比べる */
+function estStats() {
+  const list = S.tasks.filter(t => t.completedAt && t.done > 0).sort((a, b) => b.completedAt - a.completedAt).slice(0, 20);
+  if (!list.length) return { n: 0, list };
+  const ratio = list.reduce((a, t) => a + t.done, 0) / list.reduce((a, t) => a + t.est, 0);
+  const hit = list.filter(t => t.done === t.est).length;
+  return { n: list.length, list, ratio, hit };
+}
+
 async function reopenTask(id) {
   const t = taskById(id); if (!t || !t.completedAt) return;
   if (!(await ask('未完了に戻しますか？', `完了でもらった ${S.settings.ptDone}pt を返します。`, '戻す', 'やめる'))) return;
@@ -830,26 +987,119 @@ function renderTimer() {
   $('#stPomo').textContent = foc.length;
   $('#stMin').textContent = Math.round(foc.reduce((a, l) => a + (l.end - l.start), 0) / MIN);
   $('#stDone').textContent = S.tasks.filter(x => x.completedAt && dayKey(x.completedAt) === today).length;
+  const three = todayTasks();
+  const lockSel = t && t.phase === 'focus';
+  $('#three').innerHTML = three.length
+    ? `<div class="lbl">今日の3つ（${three.filter(x => x.completedAt).length}/${three.length}${three.length < THREE ? '・あと' + (THREE - three.length) + 'つ選べます' : ''}）</div><ul>` +
+      three.map(x => `<li><button type="button" data-three="${x.id}" class="${x.completedAt ? 'fin' : ''}${!x.completedAt && x.id === (lockSel ? t.taskId : S.selected) ? ' sel' : ''}" ${x.completedAt || lockSel ? 'disabled' : ''}>
+        <span>${x.completedAt ? '✅' : '⭐'}</span><span class="tt">${esc(x.title)}</span><span class="n">${x.done}/${x.est}🍅</span></button></li>`).join('') + '</ul>'
+    : `<div class="hint">「やること」で☆を押すと、今日の3つがここに出ます</div>`;
   tickUI();
 }
 function taskItem(t) {
   const isSel = S.selected === t.id && !t.completedAt;
   const acts = t.completedAt
     ? `<button class="btn sm ghost" data-tk="reopen">↩ 戻す</button><button class="btn sm ghost" data-tk="del" aria-label="消す">🗑 消す</button>`
-    : `<button class="btn sm primary" data-tk="go">▶ これをやる</button><button class="btn sm leaf" data-tk="done">✅ 完了</button><button class="btn sm ghost" data-tk="del" aria-label="消す">🗑</button>`;
+    : `<button class="btn sm primary" data-tk="go">▶ これをやる</button><button class="btn sm leaf" data-tk="done">✅ 完了</button>` +
+      (t.today === dayKey(Date.now()) ? `<button class="btn sm sq ghost star" data-tk="today" aria-label="今日の3つから外す" title="今日の3つから外す">★</button>` : `<button class="btn sm sq ghost" data-tk="today" aria-label="今日の3つに入れる" title="今日の3つに入れる">☆</button>`) +
+      `<button class="btn sm sq ghost" data-tk="del" aria-label="消す">🗑</button>`;
   return `<li class="card task${isSel ? ' sel' : ''}${t.completedAt ? ' done' : ''}" data-id="${t.id}">
     <div class="t">${esc(t.title)}</div>
     <div class="meta"><span class="tomatoes" aria-label="${t.done}/${t.est}ポモ">${tomatoes(t)}</span><span>${t.done}/${t.est}</span></div>
     <div class="acts">${acts}</div></li>`;
 }
 function renderTasks() {
-  const open = S.tasks.filter(t => !t.completedAt);
+  const k = dayKey(Date.now());
+  const open = S.tasks.filter(t => !t.completedAt).sort((a, b) => (b.today === k) - (a.today === k));
   const done = S.tasks.filter(t => t.completedAt).sort((a, b) => b.completedAt - a.completedAt);
   $('#taskList').innerHTML = open.length ? open.map(taskItem).join('') : '<li class="empty">まだありません。上から登録してみましょう 🍅</li>';
   $('#doneList').innerHTML = done.map(taskItem).join('');
   $('#doneCount').textContent = done.length;
   $('#doneWrap').hidden = !done.length;
   $$('.focusMin').forEach(e => e.textContent = S.settings.focus);
+  renderEstHint();
+}
+function renderEstHint() {
+  const st = estStats(), el = $('#estHint');
+  if (st.n < 3 || (st.ratio > 0.85 && st.ratio < 1.2)) { el.hidden = true; return; }
+  // 多くかかりがちなら切り上げ、早く終わりがちなら切り捨てて、見積もりとちがう数を出す
+  const guess = Math.max(1, st.ratio >= 1.2 ? Math.ceil(est * st.ratio) : Math.floor(est * st.ratio));
+  el.hidden = false;
+  el.textContent = st.ratio >= 1.2
+    ? `💡 これまで見積もりの約${st.ratio.toFixed(1)}倍かかっています。🍅${est}なら、実際は🍅${guess}くらいかも`
+    : `💡 これまで見積もりより早く終わりがち（約${st.ratio.toFixed(1)}倍）。` + (guess < est ? `🍅${est}なら🍅${guess}で終わるかも` : 'もう少し攻めた見積もりでも大丈夫そう');
+}
+
+/* ---------- ふり返り ---------- */
+function dayStart(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function addDays(t, n) { const d = new Date(t); d.setDate(d.getDate() + n); return d.getTime(); }
+function streakInfo() {
+  const days = new Set(S.log.filter(l => l.type === 'focus' && l.completed).map(l => dayKey(l.end)));
+  const today0 = dayStart(Date.now());
+  const doneToday = days.has(dayKey(today0));
+  let cur = 0, d = doneToday ? today0 : addDays(today0, -1);
+  while (days.has(dayKey(d)) && cur < 3660) { cur++; d = addDays(d, -1); }
+  // いちばん長い連続
+  const sorted = [...days].map(k => { const [y, m, dd] = k.split('-').map(Number); return new Date(y, m - 1, dd).getTime(); }).sort((a, b) => a - b);
+  let best = 0, run = 0, prev = null;
+  for (const t of sorted) { run = prev !== null && dayKey(addDays(prev, 1)) === dayKey(t) ? run + 1 : 1; best = Math.max(best, run); prev = t; }
+  return { cur, best: Math.max(best, cur), doneToday };
+}
+function renderReview() {
+  const now = Date.now(), today = dayKey(now);
+  const sk = streakInfo();
+  $('#rvStreak').textContent = sk.cur;
+  $('#rvFire').textContent = sk.cur ? '🔥' : '🌱';
+  $('#rvStreakSub').textContent = (sk.cur && !sk.doneToday ? '今日まだ1ポモもしていません。1ポモで記録がつながります ・ ' : '') + `いちばん長い記録 ${sk.best}日`;
+  const foc = S.log.filter(l => l.type === 'focus' && l.completed && dayKey(l.end) === today);
+  const doneT = S.tasks.filter(x => x.completedAt && dayKey(x.completedAt) === today);
+  $('#rvPomo').textContent = foc.length;
+  $('#rvMin').textContent = Math.round(foc.reduce((a, l) => a + (l.end - l.start), 0) / MIN);
+  $('#rvDone').textContent = doneT.length;
+  $('#rvGuard').textContent = foc.filter(l => !l.leaves).length;
+  // 今日やったこと：タスクごとのポモ数＋完了
+  const per = new Map();
+  for (const l of foc) per.set(l.taskId || '', (per.get(l.taskId || '') || 0) + 1);
+  for (const t of doneT) if (!per.has(t.id)) per.set(t.id, 0);
+  const rows = [...per.entries()].map(([id, n]) => {
+    const t = id ? taskById(id) : null;
+    const name = id ? (t ? t.title : '（消したタスク）') : 'フリー集中';
+    const fin = t && t.completedAt && dayKey(t.completedAt) === today;
+    return `<li><span class="tt">${fin ? '✅ ' : ''}${esc(name)}</span><span class="muted">${n ? '🍅×' + n : '完了'}</span></li>`;
+  });
+  $('#rvDid').innerHTML = rows.length ? rows.join('') : '<li class="muted">まだありません</li>';
+  // 一言
+  const yk = dayKey(addDays(dayStart(now), -1));
+  const yPomo = S.log.filter(l => l.type === 'focus' && l.completed && dayKey(l.end) === yk).length;
+  const three = todayTasks(), threeFin = three.filter(t => t.completedAt).length;
+  const leaves = foc.reduce((a, l) => a + (l.leaves || 0), 0);
+  const msgs = [];
+  if (!foc.length) msgs.push('今日はまだこれから。まず1ポモだけやってみましょう 🍅');
+  else {
+    msgs.push(`今日は🍅${foc.length}つ（${foc.length - yPomo >= 0 ? '昨日より +' + (foc.length - yPomo) : '昨日より ' + (foc.length - yPomo)}）。`);
+    if (S.settings.guard) msgs.push(leaves ? `ほかの画面に行ったのは${leaves}回。` : 'いちども離れずに集中できました 🛡');
+  }
+  if (three.length) msgs.push(threeFin === three.length ? '今日の3つ、ぜんぶ完了！🌟' : `今日の3つは ${threeFin}/${three.length}。`);
+  $('#rvMsg').textContent = msgs.join(' ');
+  // 7日間
+  const bars = [];
+  let max = 1;
+  const counts = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = addDays(dayStart(now), -i), k = dayKey(d);
+    const n = S.log.filter(l => l.type === 'focus' && l.completed && dayKey(l.end) === k).length;
+    counts.push({ d, n, k }); max = Math.max(max, n);
+  }
+  const WD = ['日', '月', '火', '水', '木', '金', '土'];
+  $('#rvBars').innerHTML = counts.map(c => `<div class="b${c.k === today ? ' today' : ''}"><span class="v">${c.n}</span><div class="col${c.n ? '' : ' zero'}" style="height:${Math.round(c.n / max * 100)}%"></div><span class="d">${c.k === today ? '今日' : WD[new Date(c.d).getDay()]}</span></div>`).join('');
+  // 見積もりと実際
+  const st = estStats();
+  $('#rvEstSum').innerHTML = !st.n ? '<span class="muted">タスクを完了すると、見積もりと実際のポモ数をここで比べられます。</span>'
+    : `<b>ぴったり ${st.hit}/${st.n}件</b> ・ 実際は見積もりの <b>${st.ratio.toFixed(2)}倍</b><br><span class="muted">${st.ratio >= 1.2 ? '少なめに見積もりがち。次は多めに見ておくと、予定がくずれにくいです' : st.ratio <= 0.85 ? '多めに見積もりがち。もう少し攻めた見積もりでも大丈夫そう' : '見積もりの感覚、いい感じです'}（新しい${st.n}件）</span>`;
+  $('#rvCmp').innerHTML = st.list.slice(0, 10).map(t => {
+    const d = t.done - t.est;
+    return `<li><span class="tt">${esc(t.title)}</span><span class="r ${d > 0 ? 'over' : d < 0 ? 'under' : ''}">🍅${t.est} → ${t.done}</span></li>`;
+  }).join('');
 }
 function renderRewards() {
   $('#ptsTop').textContent = S.points;
@@ -888,7 +1138,7 @@ function applyTheme() {
   const t = S.settings.theme;
   if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t;
 }
-function render() { renderTimer(); renderTasks(); renderRewards(); renderSettings(); }
+function render() { renderTimer(); renderTasks(); renderRewards(); renderReview(); renderSettings(); }
 
 /* ---------- 操作 ---------- */
 function showTab(name) {
@@ -911,6 +1161,10 @@ $('#controls').addEventListener('click', e => {
   else if (c === 'skipnext') { if (S.next === 'long') S.cycle = 0; S.next = 'focus'; save(); render(); }
 });
 $('#taskPick').addEventListener('change', e => { S.selected = e.target.value || null; save(); render(); });
+$('#three').addEventListener('click', e => {
+  const b = e.target.closest('[data-three]'); if (!b || b.disabled) return;
+  S.selected = b.dataset.three; save(); render();
+});
 
 let suggested = false;
 function maybeSuggestNotify() {
@@ -921,7 +1175,7 @@ function maybeSuggestNotify() {
 }
 
 let est = 1;
-function setEst(n) { est = clamp(n, 1, 20); $('#estOut').textContent = '🍅 ' + est; }
+function setEst(n) { est = clamp(n, 1, 20); $('#estOut').textContent = '🍅 ' + est; renderEstHint(); }
 $('.stepper').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setEst(est + +b.dataset.step); });
 $('#addTask').addEventListener('submit', e => {
   e.preventDefault();
@@ -938,6 +1192,7 @@ function onTaskClick(e) {
     S.selected = id; save(); render(); showTab('timer');
   }
   else if (a === 'done') completeTask(id);
+  else if (a === 'today') toggleToday(id);
   else if (a === 'del') deleteTask(id);
   else if (a === 'reopen') reopenTask(id);
 }
@@ -1011,7 +1266,10 @@ render();
 reconcile();
 schedule();
 setInterval(() => { if (S.timer) { reconcile(); if (document.visibilityState === 'visible') tickUI(); } }, 250);
-document.addEventListener('visibilitychange', () => { reconcile(); render(); syncWakeLock(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') onHide(); else onShow();
+  reconcile(); render(); syncWakeLock();
+});
 window.addEventListener('focus', () => { reconcile(); tickUI(); });
 window.addEventListener('pageshow', () => { reconcile(); render(); });
 // ほかのタブで変わったら合わせる
@@ -1021,7 +1279,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
 }
 // テスト用の入口（?fast があるときだけ）
-if (FAST > 1) window.__pomo = { get S() { return S; }, reconcile, completeTask, spin, exchange, importText, render, showTab };
+if (FAST > 1) window.__pomo = { get S() { return S; }, reconcile, completeTask, spin, exchange, importText, render, showTab, toggleToday, onHide, onShow, estStats, streakInfo };
 </script>
 </body>
 </html>
