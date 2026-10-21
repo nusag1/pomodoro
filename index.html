@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ポモとごほうび</title>
+<meta name="description" content="やることを登録して、25分集中、できたらポイントでごほうび。ポモドーロ式のTODOアプリ。">
+<meta name="theme-color" content="#e0533d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ポモとごほうび">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+:root {
+  --bg: #fbf6ef;
+  --bg-2: #f4ebdf;
+  --card: #ffffff;
+  --ink: #2b2320;
+  --muted: #7a6a62;
+  --line: #eadfd3;
+  --tomato: #e0533d;
+  --tomato-ink: #ffffff;
+  --tomato-soft: #fde4dc;
+  --leaf: #3f8f5a;
+  --leaf-soft: #e1f1e5;
+  --gold: #e8a91c;
+  --gold-soft: #fdf1cf;
+  --danger: #c4372b;
+  --ring-bg: #f1e4d6;
+  --shadow: 0 2px 10px rgba(80, 50, 30, .08);
+  --radius: 16px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1614; --bg-2: #241d1a; --card: #2a2220; --ink: #f3ebe4; --muted: #b3a49b; --line: #3d322d;
+    --tomato: #ff7a63; --tomato-ink: #2a0e08; --tomato-soft: #4a2620; --leaf: #6cc488; --leaf-soft: #20382a;
+    --gold: #f6c445; --gold-soft: #3d321a; --danger: #ff8a7a; --ring-bg: #3a2f2a; --shadow: 0 2px 12px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1614; --bg-2: #241d1a; --card: #2a2220; --ink: #f3ebe4; --muted: #b3a49b; --line: #3d322d;
+  --tomato: #ff7a63; --tomato-ink: #2a0e08; --tomato-soft: #4a2620; --leaf: #6cc488; --leaf-soft: #20382a;
+  --gold: #f6c445; --gold-soft: #3d321a; --danger: #ff8a7a; --ring-bg: #3a2f2a; --shadow: 0 2px 12px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; overflow-x: hidden; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Meiryo", system-ui, sans-serif;
+  font-weight: 500; line-height: 1.6; -webkit-text-size-adjust: 100%;
+  min-height: 100vh; min-height: 100dvh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+header.top {
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  max-width: 560px; margin: 0 auto;
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 18px; min-width: 0; }
+.brand img { width: 28px; height: 28px; border-radius: 8px; flex: none; }
+.brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pts {
+  display: inline-flex; align-items: center; gap: 4px; flex: none;
+  background: var(--gold-soft); color: var(--ink); border-radius: 999px; padding: 4px 12px; font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+}
+.pts b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.banner { background: var(--tomato-soft); border-radius: 12px; padding: 10px 12px; margin: 4px 0 12px; font-size: 14px; }
+.banner[hidden] { display: none; }
+section.view { display: none; padding-top: 4px; }
+section.view.on { display: block; }
+h2 { font-size: 17px; margin: 22px 0 10px; font-weight: 900; }
+h2:first-child { margin-top: 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* ボタン */
+.btn {
+  border: 0; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 16px;
+  background: var(--bg-2); color: var(--ink); min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .08s ease, filter .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn.primary { background: var(--tomato); color: var(--tomato-ink); }
+.btn.leaf { background: var(--leaf); color: #fff; }
+:root[data-theme="dark"] .btn.leaf { color: #0e2416; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.leaf { color: #0e2416; } }
+.btn.gold { background: var(--gold); color: #2a1d00; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.btn.sm { min-height: 38px; padding: 6px 14px; font-size: 14px; }
+.btn.block { width: 100%; }
+.iconbtn { border: 0; background: transparent; width: 40px; height: 40px; border-radius: 10px; color: var(--muted); font-size: 18px; flex: none; }
+.iconbtn:hover { background: var(--bg-2); }
+
+/* タイマー */
+.phase-tabs { display: flex; gap: 6px; justify-content: center; margin: 6px 0 4px; flex-wrap: wrap; }
+.phase-tabs span { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); background: var(--bg-2); }
+.phase-tabs span.on { background: var(--tomato); color: var(--tomato-ink); font-weight: 700; }
+.phase-tabs span.on.brk { background: var(--leaf); color: #fff; }
+.ring-wrap { position: relative; width: min(78vw, 300px); aspect-ratio: 1; margin: 12px auto 6px; }
+.ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-wrap circle { fill: none; stroke-width: 14; }
+.ring-bg { stroke: var(--ring-bg); }
+.ring-fg { stroke: var(--tomato); stroke-linecap: round; transition: stroke-dashoffset .3s linear; }
+.ring-fg.brk { stroke: var(--leaf); }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 18%; }
+.clock { font-size: clamp(44px, 15vw, 64px); font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1.1; }
+.ring-sub { font-size: 14px; color: var(--muted); }
+.dots { display: flex; gap: 6px; justify-content: center; margin: 2px 0 10px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--ring-bg); display: block; }
+.dots i.on { background: var(--tomato); }
+.now-task { text-align: center; margin: 4px 0 14px; }
+.now-task .lbl { font-size: 12px; color: var(--muted); }
+.now-task .ttl { font-size: 18px; font-weight: 700; word-break: break-word; }
+.now-task select { margin-top: 6px; max-width: 100%; width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
+.controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.controls .btn { min-width: 120px; }
+.today-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 6px; text-align: center; }
+.stat b { display: block; font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+/* やること */
+form.add { display: grid; gap: 10px; }
+.field { display: grid; gap: 4px; }
+.field label, .lbl2 { font-size: 13px; color: var(--muted); }
+input[type=text], input[type=number] {
+  width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: 16px; min-height: 48px;
+}
+input:focus-visible, button:focus-visible, select:focus-visible { outline: 3px solid color-mix(in srgb, var(--tomato) 55%, transparent); outline-offset: 2px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); }
+.stepper button { width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; font-weight: 700; border-radius: 999px; }
+.stepper output { min-width: 64px; text-align: center; font-weight: 700; }
+ul.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.task { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
+.task.sel { border-color: var(--tomato); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tomato) 35%, transparent); }
+.task .t { font-weight: 700; word-break: break-word; min-width: 0; }
+.task .meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tomatoes { letter-spacing: 1px; }
+.tomatoes .over { filter: hue-rotate(40deg); }
+.task .acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.task.done .t { text-decoration: line-through; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 22px 10px; border: 1px dashed var(--line); border-radius: var(--radius); }
+details.done-list summary { cursor: pointer; color: var(--muted); padding: 8px 0; }
+
+/* ごほうび */
+.wallet { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--gold-soft); border-color: color-mix(in srgb, var(--gold) 40%, transparent); flex-wrap: wrap; }
+.wallet .big { font-size: 36px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.reward { display: flex; align-items: center; gap: 12px; }
+.reward .em { font-size: 26px; width: 44px; height: 44px; display: grid; place-items: center; background: var(--bg-2); border-radius: 12px; flex: none; }
+.reward .body { flex: 1; min-width: 0; }
+.reward .name { font-weight: 700; word-break: break-word; }
+.reward .cost { font-size: 13px; color: var(--muted); }
+.reward .side { display: grid; gap: 4px; justify-items: end; }
+.need { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hist li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.hist li:last-child { border-bottom: 0; }
+.hist .plus { color: var(--leaf); font-weight: 700; white-space: nowrap; }
+.hist .minus { color: var(--danger); font-weight: 700; white-space: nowrap; }
+.emoji-pick { display: flex; gap: 6px; flex-wrap: wrap; }
+.emoji-pick button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 20px; }
+.emoji-pick button.on { border-color: var(--tomato); background: var(--tomato-soft); }
+
+/* 設定 */
+.set-grid { display: grid; gap: 12px; }
+.set-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.set-row .num { width: 96px; flex: none; text-align: center; }
+.set-row > span { min-width: 0; }
+.switch { position: relative; width: 52px; height: 30px; flex: none; }
+.switch input { opacity: 0; width: 100%; height: 100%; margin: 0; position: absolute; inset: 0; cursor: pointer; z-index: 1; }
+.switch i { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: background .15s; }
+.switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.switch input:checked + i { background: var(--leaf); }
+.switch input:checked + i::after { transform: translateX(22px); }
+.switch input:focus-visible + i { outline: 3px solid color-mix(in srgb, var(--tomato) 55%, transparent); outline-offset: 2px; }
+.seg { display: inline-flex; background: var(--bg-2); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 14px; min-height: 36px; }
+.seg button.on { background: var(--card); box-shadow: var(--shadow); font-weight: 700; }
+
+/* 下のナビ */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+nav.tabs button { border: 0; background: transparent; border-radius: 12px; padding: 6px 2px; display: grid; justify-items: center; gap: 0; font-size: 12px; color: var(--muted); min-height: 52px; }
+nav.tabs button .ic { font-size: 20px; line-height: 1.3; }
+nav.tabs button.on { color: var(--tomato); font-weight: 700; background: var(--tomato-soft); }
+nav.tabs .badge { position: relative; }
+nav.tabs .badge[data-n]::after { content: attr(data-n); position: absolute; top: -4px; right: -14px; background: var(--gold); color: #2a1d00; font-size: 10px; font-weight: 700; border-radius: 999px; padding: 0 5px; line-height: 16px; }
+
+/* ダイアログ */
+dialog { border: 0; border-radius: 22px; padding: 0; width: min(92vw, 400px); background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+dialog::backdrop { background: rgba(30, 18, 12, .45); }
+.dlg { padding: 22px 20px 18px; text-align: center; }
+.dlg h3 { margin: 6px 0 6px; font-size: 20px; font-weight: 900; }
+.dlg p { margin: 6px 0; }
+.dlg .big-emoji { font-size: 52px; line-height: 1.2; }
+.dlg .acts { display: grid; gap: 8px; margin-top: 16px; }
+.plus-pt { display: inline-block; font-size: 28px; font-weight: 900; color: var(--gold); text-shadow: 0 1px 0 rgba(0,0,0,.08); }
+.capsule { font-size: 64px; display: inline-block; }
+.capsule.shake { animation: shake .9s ease-in-out; }
+@keyframes shake { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-18deg); } 30% { transform: rotate(16deg); } 45% { transform: rotate(-12deg); } 60% { transform: rotate(10deg); } 75% { transform: rotate(-5deg) scale(1.1); } }
+.pop { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .capsule.shake, .pop { animation: none; } .ring-fg { transition: none; } }
+.toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 50; max-width: calc(100vw - 32px); text-align: center; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 28px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="icons/icon.svg" alt=""><span>ポモとごほうび</span></div>
+  <button class="pts" id="ptsChip" type="button" aria-label="ポイント（ごほうびを開く）">⭐ <b id="ptsTop">0</b>pt</button>
+</header>
+
+<div class="wrap">
+  <div class="banner" id="storageWarn" hidden>このブラウザではデータを保存できないようです（プライベートモードなど）。ページを閉じると記録が消えます。</div>
+
+  <!-- タイマー -->
+  <section class="view on" id="v-timer" aria-label="タイマー">
+    <div class="phase-tabs" aria-hidden="true">
+      <span data-ph="focus">集中</span><span data-ph="short">小休憩</span><span data-ph="long">長い休憩</span>
+    </div>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ring-bg" cx="60" cy="60" r="52"/>
+        <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="clock" id="clock" role="timer" aria-live="off">25:00</div>
+        <div class="ring-sub" id="ringSub">準備OK</div>
+      </div>
+    </div>
+    <div class="dots" id="dots" aria-label="長い休憩までの進み"></div>
+    <div class="now-task">
+      <div class="lbl">いまやること</div>
+      <div class="ttl" id="nowTitle">—</div>
+      <select id="taskPick" aria-label="やることを選ぶ"></select>
+    </div>
+    <div class="controls" id="controls"></div>
+    <div class="today-stats">
+      <div class="stat"><b id="stPomo">0</b><span>今日の🍅</span></div>
+      <div class="stat"><b id="stMin">0</b><span>今日の集中(分)</span></div>
+      <div class="stat"><b id="stDone">0</b><span>今日の完了</span></div>
+    </div>
+  </section>
+
+  <!-- やること -->
+  <section class="view" id="v-tasks" aria-label="やること">
+    <h2>やることを登録</h2>
+    <form class="add card" id="addTask" autocomplete="off">
+      <div class="field">
+        <label for="taskTitle">なにをする？</label>
+        <input type="text" id="taskTitle" maxlength="80" placeholder="例：レポートの序論を書く" required>
+      </div>
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <div class="lbl2">何ポモで終わりそう？（1ポモ＝<span class="focusMin">25</span>分）</div>
+          <div class="stepper" role="group" aria-label="見積もりポモ数">
+            <button type="button" data-step="-1" aria-label="減らす">−</button>
+            <output id="estOut">🍅 1</output>
+            <button type="button" data-step="1" aria-label="増やす">＋</button>
+          </div>
+        </div>
+        <button class="btn primary" type="submit">追加</button>
+      </div>
+    </form>
+    <h2>リスト</h2>
+    <ul class="list" id="taskList"></ul>
+    <details class="done-list" id="doneWrap">
+      <summary>完了したもの（<span id="doneCount">0</span>）</summary>
+      <ul class="list" id="doneList"></ul>
+    </details>
+  </section>
+
+  <!-- ごほうび -->
+  <section class="view" id="v-rewards" aria-label="ごほうび">
+    <h2>ポイント</h2>
+    <div class="card wallet">
+      <div>
+        <div class="small muted">いま使えるポイント</div>
+        <div class="big"><span id="ptsBig">0</span><span style="font-size:18px"> pt</span></div>
+        <div class="small muted">これまでに集めた合計：<span id="ptsEarned">0</span>pt</div>
+      </div>
+      <button class="btn gold" id="spinBtn" type="button">🎰 ガチャ券 <span id="spinN">0</span>枚</button>
+    </div>
+    <p class="small muted" style="margin:8px 2px 0">1ポモで<b id="ruleP">10</b>pt、タスク完了で<b id="ruleD">20</b>pt。完了するとおまけのガチャ券ももらえます（お金はかかりません）。</p>
+    <h2>ごほうび一覧</h2>
+    <ul class="list" id="rewardList"></ul>
+    <h2>ごほうびを追加</h2>
+    <form class="add card" id="addReward" autocomplete="off">
+      <div class="field">
+        <label for="rwName">ごほうびの名前</label>
+        <input type="text" id="rwName" maxlength="40" placeholder="例：コンビニスイーツ" required>
+      </div>
+      <div class="field">
+        <span class="lbl2">アイコン</span>
+        <div class="emoji-pick" id="emojiPick"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1; min-width: 120px;">
+          <label for="rwCost">必要なポイント</label>
+          <input type="number" id="rwCost" min="1" max="9999" step="1" value="30" inputmode="numeric" required>
+        </div>
+        <button class="btn primary" type="submit" style="align-self:end">追加</button>
+      </div>
+    </form>
+    <h2>ポイントの記録</h2>
+    <div class="card"><ul class="list hist" id="ledger"></ul></div>
+  </section>
+
+  <!-- 設定 -->
+  <section class="view" id="v-settings" aria-label="設定">
+    <h2>時間</h2>
+    <div class="card set-grid">
+      <label class="set-row"><span>集中（分）</span><input class="num" type="number" data-set="focus" min="1" max="120" inputmode="numeric"></label>
+      <label class="set-row"><span>小休憩（分）</span><input class="num" type="number" data-set="short" min="1" max="60" inputmode="numeric"></label>
+      <label class="set-row"><span>長い休憩（分）</span><input class="num" type="number" data-set="long" min="1" max="90" inputmode="numeric"></label>
+      <label class="set-row"><span>長い休憩は何ポモごと？</span><input class="num" type="number" data-set="longEvery" min="2" max="10" inputmode="numeric"></label>
+      <div class="set-row"><span>集中が終わったら休憩を自動で始める</span><label class="switch"><input type="checkbox" data-set="autoBreak" aria-label="休憩を自動で始める"><i></i></label></div>
+      <div class="set-row"><span>タイマー中は画面をつけたままにする</span><label class="switch"><input type="checkbox" data-set="wakeLock" aria-label="画面をつけたままにする"><i></i></label></div>
+    </div>
+    <h2>ポイント</h2>
+    <div class="card set-grid">
+      <label class="set-row"><span>1ポモでもらえるpt</span><input class="num" type="number" data-set="ptPomo" min="0" max="999" inputmode="numeric"></label>
+      <label class="set-row"><span>タスク完了でもらえるpt</span><input class="num" type="number" data-set="ptDone" min="0" max="999" inputmode="numeric"></label>
+      <div class="set-row"><span>完了したらガチャ券をもらう</span><label class="switch"><input type="checkbox" data-set="gacha" aria-label="ガチャ券"><i></i></label></div>
+    </div>
+    <h2>お知らせ</h2>
+    <div class="card set-grid">
+      <div class="set-row"><span>終わったら音を鳴らす</span><label class="switch"><input type="checkbox" data-set="sound" aria-label="音"><i></i></label></div>
+      <div class="set-row"><span class="small muted">音の確認</span><button class="btn sm ghost" type="button" id="testSound">🔔 鳴らしてみる</button></div>
+      <div class="set-row"><span>通知 <span class="small muted" id="notifState"></span></span><button class="btn sm ghost" type="button" id="notifBtn">通知をオンにする</button></div>
+      <p class="small muted" style="margin:0">ほかのタブを見ている間も、終わったら通知でお知らせします。スマホで画面を消している間は、端末によって通知が遅れることがあります（タイマーの時間そのものはずれません）。</p>
+    </div>
+    <h2>見た目</h2>
+    <div class="card set-grid">
+      <div class="set-row"><span>テーマ</span>
+        <div class="seg" id="themeSeg" role="group" aria-label="テーマ">
+          <button type="button" data-theme="auto">自動</button><button type="button" data-theme="light">ライト</button><button type="button" data-theme="dark">ダーク</button>
+        </div>
+      </div>
+    </div>
+    <h2>バックアップ</h2>
+    <div class="card set-grid">
+      <p class="small muted" style="margin:0">データはこの端末のブラウザの中だけに保存されます（どこにも送りません）。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。</p>
+      <div class="row">
+        <button class="btn sm ghost" type="button" id="exportBtn">⬇ 書き出す（JSON）</button>
+        <button class="btn sm ghost" type="button" id="importBtn">⬆ 読み込む</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </div>
+    <p class="foot">ポモとごほうび ・ データはこの端末だけに保存</p>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="画面の切りかえ">
+  <div class="in">
+    <button type="button" data-tab="timer" class="on"><span class="ic">⏱️</span>タイマー</button>
+    <button type="button" data-tab="tasks"><span class="ic">📝</span>やること</button>
+    <button type="button" data-tab="rewards"><span class="ic badge" id="navBadge">🎁</span>ごほうび</button>
+    <button type="button" data-tab="settings"><span class="ic">⚙️</span>設定</button>
+  </div>
+</nav>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   ポモとごほうび
+   - データはすべて localStorage（KEY）。サーバーには何も送らない
+   - タイマーは「終わる時刻（endsAt）」を保存し、表示のたびに Date.now() との差で残りを出す
+     → タブが裏に回っても、スマホが眠っても、戻ったときに正しい
+   - log[] に1ポモごとの記録（予定時間・実際の開始/終了・中断）を残す
+     → 見積もりと実績の比較、連続日数、ふり返り、離脱検知を後から足せるように
+   ========================================================= */
+const KEY = 'pomo-gohoubi-v1';
+const params = new URLSearchParams(location.search);
+// テスト用：?fast=300 で時間を300倍速にする（25分→5秒）
+const FAST = Math.max(1, Number(params.get('fast')) || 1);
+const MIN = 60000 / FAST;
+
+const DEF_SETTINGS = {
+  focus: 25, short: 5, long: 15, longEvery: 4,
+  autoBreak: true, wakeLock: false,
+  ptPomo: 10, ptDone: 20, gacha: true,
+  sound: true, notify: false, theme: 'auto'
+};
+const EMOJIS = ['🍰', '🎮', '📺', '☕', '🍜', '🛁', '📚', '🛍️', '😴', '🎧', '🍺', '🌳'];
+const GACHA = [ // 合計1.0。お金は一切かからない、おまけのポイント
+  { p: 0.55, pt: 5, name: '小吉', em: '🍬' },
+  { p: 0.30, pt: 10, name: '中吉', em: '🍡' },
+  { p: 0.12, pt: 20, name: '大吉', em: '🍰' },
+  { p: 0.03, pt: 50, name: '超大吉', em: '👑' }
+];
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function freshState() {
+  return {
+    v: 1,
+    tasks: [],      // {id,title,est,done(実ポモ数),createdAt,completedAt,today(今日の3つ用・予約)}
+    rewards: [
+      { id: uid(), name: 'コンビニスイーツ', cost: 30, em: '🍰' },
+      { id: uid(), name: 'ゲーム30分', cost: 50, em: '🎮' },
+      { id: uid(), name: '好きな動画を1本', cost: 20, em: '📺' }
+    ],
+    points: 0, earned: 0, spins: 0,
+    cycle: 0,       // 長い休憩までの集中回数
+    selected: null, // 選んでいるタスクID
+    timer: null,    // {phase,startedAt,endsAt,pausedLeft,taskId,planned}
+    next: 'focus',  // タイマーが止まっているとき、次に始めるもの
+    log: [],        // {type:'focus'|'short'|'long', taskId, planned, start, end, completed, pauses}
+    ledger: [],     // {at, delta, why}
+    settings: { ...DEF_SETTINGS }
+  };
+}
+
+/* ---------- 小道具 ---------- */
+const $ = (q, el = document) => el.querySelector(q);
+const $$ = (q, el = document) => [...el.querySelectorAll(q)];
+const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dayKey = t => { const d = new Date(t); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+const fmtClock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const fmtTime = t => { const d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+let storageOK = true;
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return freshState();
+    return normalize(JSON.parse(raw));
+  } catch (e) {
+    storageOK = false;
+    return freshState();
+  }
+}
+function normalize(d) {
+  if (!d || typeof d !== 'object' || !Array.isArray(d.tasks) || !Array.isArray(d.rewards)) throw new Error('形式がちがいます');
+  const s = freshState();
+  const out = { ...s, ...d };
+  out.settings = { ...DEF_SETTINGS, ...(d.settings || {}) };
+  out.tasks = d.tasks.filter(t => t && typeof t.title === 'string').map(t => ({
+    id: String(t.id || uid()), title: t.title.slice(0, 80), est: clamp(+t.est || 1, 1, 20), done: Math.max(0, +t.done || 0),
+    createdAt: +t.createdAt || Date.now(), completedAt: t.completedAt ? +t.completedAt : null, today: !!t.today
+  }));
+  out.rewards = d.rewards.filter(r => r && typeof r.name === 'string').map(r => ({
+    id: String(r.id || uid()), name: r.name.slice(0, 40), cost: clamp(Math.round(+r.cost || 1), 1, 9999), em: typeof r.em === 'string' ? r.em.slice(0, 4) : '🎁'
+  }));
+  for (const k of ['points', 'earned', 'spins', 'cycle']) out[k] = Math.max(0, Math.floor(+d[k] || 0));
+  out.log = Array.isArray(d.log) ? d.log : [];
+  out.ledger = Array.isArray(d.ledger) ? d.ledger : [];
+  if (out.timer && !(out.timer.endsAt > 0 || out.timer.pausedLeft > 0)) out.timer = null;
+  if (!['focus', 'short', 'long'].includes(out.next)) out.next = 'focus';
+  return out;
+}
+function save() {
+  if (!storageOK) return;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { storageOK = false; $('#storageWarn').hidden = false; }
+}
+let S = load();
+
+const PH_LABEL = { focus: '集中', short: '小休憩', long: '長い休憩' };
+const durOf = ph => S.settings[ph] * MIN;
+const taskById = id => S.tasks.find(t => t.id === id) || null;
+
+let toastT;
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2400);
+}
+function addPoints(delta, why) {
+  if (!delta) return;
+  S.points = Math.max(0, S.points + delta);
+  if (delta > 0) S.earned += delta;
+  S.ledger.unshift({ at: Date.now(), delta, why });
+  if (S.ledger.length > 300) S.ledger.length = 300;
+}
+
+/* ---------- 音と通知 ---------- */
+let actx = null;
+function audio() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+  } catch (e) { actx = null; }
+  return actx;
+}
+function chime(kind) {
+  if (!S.settings.sound) return;
+  const ctx = audio(); if (!ctx) return;
+  const notes = kind === 'focus' ? [784, 988, 1175, 1568] : [659, 523, 659, 784];
+  const t0 = ctx.currentTime + 0.02;
+  notes.forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    const t = t0 + i * 0.18;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.55);
+  });
+}
+function notifState() {
+  if (!('Notification' in window)) return 'unsupported';
+  return Notification.permission; // granted / denied / default
+}
+async function askNotify() {
+  if (notifState() === 'unsupported') { toast('このブラウザは通知に対応していません'); return; }
+  if (notifState() === 'denied') { toast('通知がブロックされています。ブラウザの設定から許可してください'); return; }
+  try {
+    const r = await Notification.requestPermission();
+    S.settings.notify = r === 'granted'; save(); renderSettings();
+    toast(r === 'granted' ? '通知をオンにしました' : '通知はオフのままです');
+  } catch (e) { toast('通知を設定できませんでした'); }
+}
+async function notify(title, body) {
+  if (!S.settings.notify || notifState() !== 'granted') return;
+  const opt = { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'pomo', renotify: true };
+  try {
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if (reg) { await reg.showNotification(title, opt); return; }
+  } catch (e) { /* 下で通常の通知 */ }
+  try { new Notification(title, opt); } catch (e) { }
+}
+
+/* ---------- 画面をつけたままにする ---------- */
+let wakeLock = null;
+async function syncWakeLock() {
+  const want = S.settings.wakeLock && S.timer && !S.timer.pausedLeft && document.visibilityState === 'visible';
+  try {
+    if (want && !wakeLock && 'wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    else if (!want && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+
+/* ---------- タイマー ---------- */
+function startPhase(phase, at = Date.now()) {
+  const planned = durOf(phase);
+  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: phase === 'focus' ? S.selected : null, planned, pauses: 0 };
+  save(); schedule(); syncWakeLock();
+}
+function pause() {
+  if (!S.timer || S.timer.pausedLeft) return;
+  S.timer.pausedLeft = Math.max(1, S.timer.endsAt - Date.now());
+  S.timer.pauses++;
+  save(); schedule(); syncWakeLock(); render();
+}
+function resume() {
+  if (!S.timer || !S.timer.pausedLeft) return;
+  S.timer.endsAt = Date.now() + S.timer.pausedLeft; S.timer.pausedLeft = null;
+  save(); schedule(); syncWakeLock(); render();
+}
+function logPhase(t, end, completed) {
+  S.log.push({ type: t.phase, taskId: t.taskId, planned: t.planned, start: t.startedAt, end, completed, pauses: t.pauses || 0 });
+  if (S.log.length > 5000) S.log.splice(0, S.log.length - 5000);
+}
+async function stopTimer() {
+  if (!S.timer) return;
+  const isFocus = S.timer.phase === 'focus';
+  if (isFocus && !(await ask('この集中をやめますか？', '途中でやめたポモはポイントになりません。', 'やめる', 'つづける'))) return;
+  if (!S.timer) return;
+  logPhase(S.timer, Date.now(), false);
+  S.timer = null; S.next = 'focus';
+  save(); schedule(); syncWakeLock(); render();
+}
+function skipBreak() {
+  if (!S.timer || S.timer.phase === 'focus') return;
+  if (S.timer.phase === 'long') S.cycle = 0;
+  logPhase(S.timer, Date.now(), false);
+  S.timer = null; S.next = 'focus'; save(); schedule(); syncWakeLock(); render();
+}
+
+// 終わった時刻を過ぎていたら、その時刻で区切って次へ進める（裏にいた間に複数終わっても正しく進む）
+function reconcile() {
+  const now = Date.now();
+  const finished = [];
+  let guard = 0;
+  while (S.timer && !S.timer.pausedLeft && now >= S.timer.endsAt && guard++ < 20) {
+    const t = S.timer;
+    logPhase(t, t.endsAt, true);
+    if (t.phase === 'focus') {
+      S.cycle++;
+      const task = taskById(t.taskId);
+      if (task && !task.completedAt) task.done++;
+      addPoints(S.settings.ptPomo, task ? '🍅 ' + task.title : '🍅 集中');
+      const brk = S.cycle % S.settings.longEvery === 0 ? 'long' : 'short';
+      finished.push({ phase: 'focus', taskId: t.taskId, next: brk, at: t.endsAt });
+      if (S.settings.autoBreak) startPhaseSilent(brk, t.endsAt); else { S.timer = null; S.next = brk; }
+    } else {
+      if (t.phase === 'long') S.cycle = 0;
+      finished.push({ phase: t.phase, at: t.endsAt });
+      S.timer = null; S.next = 'focus';
+    }
+  }
+  if (finished.length) { save(); schedule(); syncWakeLock(); onFinished(finished); }
+}
+function startPhaseSilent(phase, at) {
+  const planned = durOf(phase);
+  S.timer = { phase, startedAt: at, endsAt: at + planned, pausedLeft: null, taskId: null, planned, pauses: 0 };
+}
+
+let pendingFocusDialog = null;
+function onFinished(list) {
+  const last = list[list.length - 1];
+  const focusDone = list.filter(x => x.phase === 'focus');
+  const kind = last.phase === 'focus' ? 'focus' : 'break';
+  chime(kind);
+  if (kind === 'focus') {
+    const task = taskById(last.taskId);
+    notify('🍅 集中おわり！ +' + S.settings.ptPomo + 'pt', (task ? task.title + ' ・ ' : '') + (last.next === 'long' ? '長い休憩' : '休憩') + 'しましょう');
+  } else {
+    notify('☕ 休憩おわり', 'つぎの集中を始めましょう');
+  }
+  render();
+  if (focusDone.length) {
+    const f = focusDone[focusDone.length - 1];
+    pendingFocusDialog = { taskId: f.taskId, count: focusDone.length, next: f.next, breakOver: last.phase !== 'focus' };
+    showFocusDialog();
+  } else if (document.visibilityState === 'visible') {
+    toast('休憩おわり！ つぎの集中へ');
+  }
+}
+function showFocusDialog() {
+  const p = pendingFocusDialog; if (!p) return;
+  pendingFocusDialog = null;
+  const task = taskById(p.taskId);
+  const pt = S.settings.ptPomo * p.count;
+  const prog = task ? `<p>${esc(task.title)}<br><span class="tomatoes">${tomatoes(task)}</span> <span class="muted small">${task.done}/${task.est}ポモ</span></p>` : '';
+  const brkMsg = p.breakOver ? '休憩も終わっています。つぎの集中へどうぞ。' : (S.timer ? `${PH_LABEL[S.timer.phase]}中（${S.settings[S.timer.phase]}分）` : `つぎは${PH_LABEL[p.next]}です`);
+  openDlg(`
+    <div class="big-emoji pop">🍅</div>
+    <h3>${p.count > 1 ? p.count + 'ポモ' : '1ポモ'}おつかれさま！</h3>
+    <div class="plus-pt pop">+${pt}pt</div>
+    ${prog}
+    <p class="small muted">${brkMsg}</p>
+    <div class="acts">
+      ${task && !task.completedAt ? `<button class="btn leaf" data-act="complete" data-id="${task.id}">✅ このタスク完了！</button><button class="btn ghost" data-act="close">まだ続ける</button>` : `<button class="btn primary" data-act="close">OK</button>`}
+    </div>`);
+}
+
+let schedT = null;
+function schedule() {
+  clearTimeout(schedT);
+  if (S.timer && !S.timer.pausedLeft) {
+    const ms = S.timer.endsAt - Date.now();
+    schedT = setTimeout(() => { reconcile(); tickUI(); }, clamp(ms + 30, 0, 2147483000));
+  }
+}
+
+/* ---------- タスク ---------- */
+function tomatoes(t) {
+  let s = '';
+  const n = Math.max(t.est, t.done);
+  for (let i = 0; i < Math.min(n, 12); i++) s += i < t.done ? (i < t.est ? '🍅' : '<span class="over">🍅</span>') : '⚪';
+  return s + (n > 12 ? '…' : '');
+}
+function addTask(title, est) {
+  const t = { id: uid(), title, est, done: 0, createdAt: Date.now(), completedAt: null, today: false };
+  S.tasks.push(t);
+  if (!S.selected) S.selected = t.id;
+  save(); render();
+}
+function completeTask(id) {
+  const t = taskById(id); if (!t || t.completedAt) return;
+  t.completedAt = Date.now();
+  addPoints(S.settings.ptDone, '✅ ' + t.title);
+  if (S.settings.gacha) S.spins++;
+  if (S.selected === id) S.selected = (S.tasks.find(x => !x.completedAt) || {}).id || null;
+  save(); render();
+  chime('focus');
+  openDlg(`
+    <div class="big-emoji pop">🎉</div>
+    <h3>完了！よくがんばりました</h3>
+    <p>${esc(t.title)}</p>
+    <p class="small muted">見積もり ${t.est}ポモ ／ 実際 ${t.done}ポモ</p>
+    <div class="plus-pt pop">+${S.settings.ptDone}pt</div>
+    ${S.settings.gacha ? '<p>おまけの <b>ガチャ券</b> を1枚もらいました</p>' : ''}
+    <div class="acts">
+      ${S.settings.gacha ? '<button class="btn gold" data-act="spin">🎰 いま回す</button>' : ''}
+      <button class="btn ghost" data-act="close">${S.settings.gacha ? 'あとで' : 'OK'}</button>
+    </div>`);
+}
+async function reopenTask(id) {
+  const t = taskById(id); if (!t || !t.completedAt) return;
+  if (!(await ask('未完了に戻しますか？', `完了でもらった ${S.settings.ptDone}pt を返します。`, '戻す', 'やめる'))) return;
+  t.completedAt = null;
+  addPoints(-Math.min(S.points, S.settings.ptDone), '↩ 完了取り消し：' + t.title);
+  save(); render();
+}
+async function deleteTask(id) {
+  const t = taskById(id); if (!t) return;
+  if (!(await ask('このタスクを消しますか？', esc(t.title) + '<br><span class="small muted">もらったポイントはそのままです</span>', '消す', 'やめる'))) return;
+  S.tasks = S.tasks.filter(x => x.id !== id);
+  if (S.selected === id) S.selected = (S.tasks.find(x => !x.completedAt) || {}).id || null;
+  save(); render();
+}
+
+/* ---------- ごほうび ---------- */
+async function exchange(id) {
+  const r = S.rewards.find(x => x.id === id); if (!r) return;
+  if (S.points < r.cost) { toast(`あと ${r.cost - S.points}pt たりません`); return; }
+  if (!(await ask(`${r.em} ${esc(r.name)}`, `${r.cost}pt と交換しますか？<br><span class="small muted">交換後 ${S.points - r.cost}pt</span>`, '交換する', 'やめる'))) return;
+  if (S.points < r.cost) return;
+  addPoints(-r.cost, '🎁 ' + r.name);
+  save(); render();
+  openDlg(`<div class="big-emoji pop">${esc(r.em)}</div><h3>ごほうびタイム！</h3><p>${esc(r.name)} を楽しんでください</p><div class="acts"><button class="btn primary" data-act="close">いってきます</button></div>`);
+}
+async function deleteReward(id) {
+  const r = S.rewards.find(x => x.id === id); if (!r) return;
+  if (!(await ask('このごほうびを消しますか？', esc(r.em + ' ' + r.name), '消す', 'やめる'))) return;
+  S.rewards = S.rewards.filter(x => x.id !== id); save(); render();
+}
+function drawGacha() {
+  let x = Math.random(), acc = 0;
+  for (const g of GACHA) { acc += g.p; if (x < acc) return g; }
+  return GACHA[0];
+}
+function spin() {
+  if (S.spins <= 0) { toast('ガチャ券がありません。タスクを完了するともらえます'); return; }
+  S.spins--;
+  const g = drawGacha();
+  addPoints(g.pt, '🎰 ガチャ（' + g.name + '）');
+  save(); render();
+  openDlg(`<div class="capsule shake" id="cap">🎁</div><h3 id="gTitle">なにが出るかな…</h3><div id="gRes" style="min-height:70px"></div><div class="acts" id="gActs" style="visibility:hidden"></div>`);
+  setTimeout(() => {
+    const cap = $('#cap'); if (!cap) return;
+    cap.classList.remove('shake'); cap.textContent = g.em; cap.classList.add('pop');
+    $('#gTitle').textContent = g.name + '！';
+    $('#gRes').innerHTML = `<div class="plus-pt pop">+${g.pt}pt</div>`;
+    const acts = $('#gActs');
+    acts.innerHTML = (S.spins > 0 ? `<button class="btn gold" data-act="spin">もう1回（のこり${S.spins}枚）</button>` : '') + '<button class="btn primary" data-act="close">OK</button>';
+    acts.style.visibility = 'visible';
+  }, 950);
+}
+
+/* ---------- ダイアログ ---------- */
+const dlg = $('#dlg');
+let dlgResolve = null;
+function openDlg(html) {
+  if (dlgResolve) { const r = dlgResolve; dlgResolve = null; r(false); }
+  $('#dlgBody').innerHTML = html;
+  if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); } }
+  const f = $('#dlgBody .acts .btn'); if (f) f.focus();
+}
+function closeDlg() {
+  if (dlg.open) dlg.close();
+  if (dlgResolve) { const r = dlgResolve; dlgResolve = null; r(false); }
+  if (pendingFocusDialog) showFocusDialog();
+}
+function ask(title, body, ok, cancel) {
+  return new Promise(res => {
+    openDlg(`<h3>${title}</h3><p>${body}</p><div class="acts"><button class="btn primary" data-act="ok">${ok}</button><button class="btn ghost" data-act="close">${cancel}</button></div>`);
+    dlgResolve = res;
+  });
+}
+dlg.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) { if (e.target === dlg) closeDlg(); return; }
+  const act = b.dataset.act;
+  if (act === 'ok') { const r = dlgResolve; dlgResolve = null; dlg.close(); r && r(true); }
+  else if (act === 'close') closeDlg();
+  else if (act === 'complete') { dlg.close(); completeTask(b.dataset.id); }
+  else if (act === 'spin') { spin(); }
+});
+dlg.addEventListener('cancel', e => { e.preventDefault(); closeDlg(); });
+
+/* ---------- 描画 ---------- */
+const C = 2 * Math.PI * 52;
+function tickUI() {
+  const t = S.timer;
+  let left, total, phase;
+  if (t) { phase = t.phase; total = t.planned; left = t.pausedLeft ? t.pausedLeft : t.endsAt - Date.now(); }
+  else { phase = S.next; total = durOf(phase); left = total; }
+  left = clamp(left, 0, total);
+  $('#clock').textContent = fmtClock(left);
+  const fg = $('#ringFg');
+  fg.style.strokeDashoffset = (C * (1 - left / total)).toFixed(2);
+  fg.classList.toggle('brk', phase !== 'focus');
+  $('#ringSub').textContent = !t ? (phase === 'focus' ? '準備OK' : PH_LABEL[phase] + 'の準備OK') : t.pausedLeft ? '一時停止中' : PH_LABEL[phase] + '中';
+  $$('.phase-tabs span').forEach(s => { s.classList.toggle('on', s.dataset.ph === phase); s.classList.toggle('brk', s.dataset.ph !== 'focus'); });
+  document.title = t ? `${fmtClock(left)} ${PH_LABEL[phase]} ・ ポモとごほうび` : 'ポモとごほうび';
+}
+function renderTimer() {
+  const t = S.timer;
+  const sel = taskById(S.selected);
+  const running = t && t.phase === 'focus' ? taskById(t.taskId) : null;
+  $('#nowTitle').textContent = t && t.phase === 'focus' ? (running ? running.title : 'フリー集中') : (sel ? sel.title : 'タスクを選んでください');
+  const pick = $('#taskPick');
+  const open = S.tasks.filter(x => !x.completedAt);
+  pick.innerHTML = '<option value="">（タスクなしで集中）</option>' + open.map(x => `<option value="${x.id}">${esc(x.title)}（${x.done}/${x.est}）</option>`).join('');
+  pick.value = sel && !sel.completedAt ? sel.id : '';
+  pick.hidden = !!(t && t.phase === 'focus');
+  const every = S.settings.longEvery;
+  const filled = S.cycle % every === 0 && S.cycle > 0 ? every : S.cycle % every;
+  $('#dots').innerHTML = Array.from({ length: every }, (_, i) => `<i class="${i < filled ? 'on' : ''}"></i>`).join('');
+  const c = $('#controls');
+  if (!t) {
+    c.innerHTML = S.next === 'focus'
+      ? `<button class="btn primary" data-ctl="start">▶ 集中スタート</button>`
+      : `<button class="btn leaf" data-ctl="start">☕ ${PH_LABEL[S.next]}スタート</button><button class="btn ghost" data-ctl="skipnext">休憩しない</button>`;
+  } else if (t.pausedLeft) {
+    c.innerHTML = `<button class="btn primary" data-ctl="resume">▶ 再開</button><button class="btn ghost" data-ctl="stop">■ やめる</button>`;
+  } else if (t.phase === 'focus') {
+    c.innerHTML = `<button class="btn ghost" data-ctl="pause">Ⅱ 一時停止</button><button class="btn ghost" data-ctl="stop">■ やめる</button>`;
+  } else {
+    c.innerHTML = `<button class="btn ghost" data-ctl="pause">Ⅱ 一時停止</button><button class="btn ghost" data-ctl="skip">休憩を終える</button>`;
+  }
+  const today = dayKey(Date.now());
+  const foc = S.log.filter(l => l.type === 'focus' && l.completed && dayKey(l.end) === today);
+  $('#stPomo').textContent = foc.length;
+  $('#stMin').textContent = Math.round(foc.reduce((a, l) => a + (l.end - l.start), 0) / MIN);
+  $('#stDone').textContent = S.tasks.filter(x => x.completedAt && dayKey(x.completedAt) === today).length;
+  tickUI();
+}
+function taskItem(t) {
+  const isSel = S.selected === t.id && !t.completedAt;
+  const acts = t.completedAt
+    ? `<button class="btn sm ghost" data-tk="reopen">↩ 戻す</button><button class="btn sm ghost" data-tk="del" aria-label="消す">🗑 消す</button>`
+    : `<button class="btn sm primary" data-tk="go">▶ これをやる</button><button class="btn sm leaf" data-tk="done">✅ 完了</button><button class="btn sm ghost" data-tk="del" aria-label="消す">🗑</button>`;
+  return `<li class="card task${isSel ? ' sel' : ''}${t.completedAt ? ' done' : ''}" data-id="${t.id}">
+    <div class="t">${esc(t.title)}</div>
+    <div class="meta"><span class="tomatoes" aria-label="${t.done}/${t.est}ポモ">${tomatoes(t)}</span><span>${t.done}/${t.est}</span></div>
+    <div class="acts">${acts}</div></li>`;
+}
+function renderTasks() {
+  const open = S.tasks.filter(t => !t.completedAt);
+  const done = S.tasks.filter(t => t.completedAt).sort((a, b) => b.completedAt - a.completedAt);
+  $('#taskList').innerHTML = open.length ? open.map(taskItem).join('') : '<li class="empty">まだありません。上から登録してみましょう 🍅</li>';
+  $('#doneList').innerHTML = done.map(taskItem).join('');
+  $('#doneCount').textContent = done.length;
+  $('#doneWrap').hidden = !done.length;
+  $$('.focusMin').forEach(e => e.textContent = S.settings.focus);
+}
+function renderRewards() {
+  $('#ptsTop').textContent = S.points;
+  $('#ptsBig').textContent = S.points;
+  $('#ptsEarned').textContent = S.earned;
+  $('#spinN').textContent = S.spins;
+  $('#spinBtn').disabled = S.spins <= 0;
+  $('#ruleP').textContent = S.settings.ptPomo; $('#ruleD').textContent = S.settings.ptDone;
+  const nb = $('#navBadge'); if (S.spins > 0) nb.dataset.n = S.spins; else delete nb.dataset.n;
+  $('#rewardList').innerHTML = S.rewards.length ? S.rewards.map(r => {
+    const ok = S.points >= r.cost;
+    return `<li class="card reward" data-id="${r.id}">
+      <div class="em">${esc(r.em)}</div>
+      <div class="body"><div class="name">${esc(r.name)}</div><div class="cost">⭐ ${r.cost}pt</div></div>
+      <div class="side"><button class="btn sm ${ok ? 'gold' : 'ghost'}" data-rw="ex" ${ok ? '' : 'aria-disabled="true"'}>交換</button>${ok ? '' : `<span class="need">あと${r.cost - S.points}pt</span>`}</div>
+      <button class="iconbtn" data-rw="del" aria-label="${esc(r.name)}を消す">🗑</button></li>`;
+  }).join('') : '<li class="empty">ごほうびを追加しましょう</li>';
+  $('#ledger').innerHTML = S.ledger.length ? S.ledger.slice(0, 30).map(l =>
+    `<li><span>${esc(l.why)}<br><span class="small muted">${fmtTime(l.at)}</span></span><span class="${l.delta > 0 ? 'plus' : 'minus'}">${l.delta > 0 ? '+' : ''}${l.delta}pt</span></li>`).join('')
+    : '<li class="muted small">まだ記録はありません</li>';
+}
+function renderSettings() {
+  $$('[data-set]').forEach(el => {
+    const v = S.settings[el.dataset.set];
+    if (el.type === 'checkbox') el.checked = !!v; else if (document.activeElement !== el) el.value = v;
+  });
+  const ns = notifState();
+  $('#notifState').textContent = { granted: S.settings.notify ? '（オン）' : '（オフ）', denied: '（ブロック中）', default: '（オフ）', unsupported: '（非対応）' }[ns];
+  const nb = $('#notifBtn');
+  nb.textContent = ns === 'granted' ? (S.settings.notify ? '通知をオフにする' : '通知をオンにする') : '通知をオンにする';
+  nb.disabled = ns === 'unsupported';
+  $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.settings.theme));
+  applyTheme();
+}
+function applyTheme() {
+  const t = S.settings.theme;
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t;
+}
+function render() { renderTimer(); renderTasks(); renderRewards(); renderSettings(); }
+
+/* ---------- 操作 ---------- */
+function showTab(name) {
+  $$('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + name));
+  $$('nav.tabs button').forEach(b => { const on = b.dataset.tab === name; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  window.scrollTo(0, 0);
+}
+$$('nav.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+$('#ptsChip').addEventListener('click', () => showTab('rewards'));
+
+$('#controls').addEventListener('click', e => {
+  const b = e.target.closest('[data-ctl]'); if (!b) return;
+  audio(); // スマホで音を鳴らせるよう、タップのときに音の準備をしておく
+  const c = b.dataset.ctl;
+  if (c === 'start') { startPhase(S.next); render(); maybeSuggestNotify(); }
+  else if (c === 'pause') pause();
+  else if (c === 'resume') resume();
+  else if (c === 'stop') stopTimer();
+  else if (c === 'skip') skipBreak();
+  else if (c === 'skipnext') { if (S.next === 'long') S.cycle = 0; S.next = 'focus'; save(); render(); }
+});
+$('#taskPick').addEventListener('change', e => { S.selected = e.target.value || null; save(); render(); });
+
+let suggested = false;
+function maybeSuggestNotify() {
+  if (suggested || S.settings.notify || notifState() !== 'default') return;
+  suggested = true;
+  // 押しつけず、最初のスタートのときに一度だけ聞く
+  setTimeout(() => toast('設定 → 通知をオンにすると、ほかの画面にいても終わりを知らせます'), 600);
+}
+
+let est = 1;
+function setEst(n) { est = clamp(n, 1, 20); $('#estOut').textContent = '🍅 ' + est; }
+$('.stepper').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setEst(est + +b.dataset.step); });
+$('#addTask').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('#taskTitle').value.trim(); if (!title) return;
+  addTask(title, est); $('#taskTitle').value = ''; setEst(1);
+  toast('追加しました');
+});
+function onTaskClick(e) {
+  const b = e.target.closest('[data-tk]'); if (!b) return;
+  const id = b.closest('[data-id]').dataset.id;
+  const a = b.dataset.tk;
+  if (a === 'go') {
+    if (S.timer && S.timer.phase === 'focus') { toast('集中が終わってから切りかえられます'); return; }
+    S.selected = id; save(); render(); showTab('timer');
+  }
+  else if (a === 'done') completeTask(id);
+  else if (a === 'del') deleteTask(id);
+  else if (a === 'reopen') reopenTask(id);
+}
+$('#taskList').addEventListener('click', onTaskClick);
+$('#doneList').addEventListener('click', onTaskClick);
+
+let rwEm = EMOJIS[0];
+$('#emojiPick').innerHTML = EMOJIS.map(e => `<button type="button" data-em="${e}" aria-label="${e}">${e}</button>`).join('');
+function setEm(e) { rwEm = e; $$('#emojiPick button').forEach(b => b.classList.toggle('on', b.dataset.em === e)); }
+$('#emojiPick').addEventListener('click', e => { const b = e.target.closest('[data-em]'); if (b) setEm(b.dataset.em); });
+setEm(rwEm);
+$('#addReward').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#rwName').value.trim(); const cost = Math.round(+$('#rwCost').value);
+  if (!name || !(cost >= 1)) return;
+  S.rewards.push({ id: uid(), name, cost: clamp(cost, 1, 9999), em: rwEm });
+  $('#rwName').value = ''; save(); render(); toast('ごほうびを追加しました');
+});
+$('#rewardList').addEventListener('click', e => {
+  const b = e.target.closest('[data-rw]'); if (!b) return;
+  const id = b.closest('[data-id]').dataset.id;
+  if (b.dataset.rw === 'ex') exchange(id); else deleteReward(id);
+});
+$('#spinBtn').addEventListener('click', spin);
+
+$$('[data-set]').forEach(el => el.addEventListener('change', () => {
+  const k = el.dataset.set;
+  if (el.type === 'checkbox') S.settings[k] = el.checked;
+  else {
+    const n = Math.round(+el.value);
+    S.settings[k] = clamp(isFinite(n) ? n : DEF_SETTINGS[k], +el.min, +el.max);
+    el.value = S.settings[k];
+  }
+  save(); render(); syncWakeLock();
+}));
+$('#notifBtn').addEventListener('click', () => {
+  if (notifState() === 'granted') { S.settings.notify = !S.settings.notify; save(); renderSettings(); toast(S.settings.notify ? '通知をオンにしました' : '通知をオフにしました'); }
+  else askNotify();
+});
+$('#testSound').addEventListener('click', () => { audio(); const s = S.settings.sound; S.settings.sound = true; chime('focus'); S.settings.sound = s; });
+$('#themeSeg').addEventListener('click', e => { const b = e.target.closest('[data-theme]'); if (!b) return; S.settings.theme = b.dataset.theme; save(); renderSettings(); });
+
+$('#exportBtn').addEventListener('click', () => {
+  const data = JSON.stringify({ ...S, exportedAt: new Date().toISOString(), app: 'pomo-gohoubi' }, null, 1);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  const d = new Date();
+  a.download = `pomo-backup-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('書き出しました');
+});
+$('#importBtn').addEventListener('click', () => $('#importFile').click());
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try { await importText(await f.text()); } catch (err) { toast('読み込めませんでした：' + err.message); }
+});
+async function importText(text) {
+  const d = normalize(JSON.parse(text));
+  delete d.exportedAt; delete d.app;
+  if (!(await ask('バックアップを読み込みますか？', `いまのデータは上書きされます。<br><span class="small muted">タスク${d.tasks.length}件・ごほうび${d.rewards.length}件・${d.points}pt</span>`, '読み込む', 'やめる'))) return false;
+  S = d; save(); schedule(); render(); toast('読み込みました');
+  return true;
+}
+
+/* ---------- 起動 ---------- */
+if (!storageOK) $('#storageWarn').hidden = false;
+setEst(1);
+render();
+reconcile();
+schedule();
+setInterval(() => { if (S.timer) { reconcile(); if (document.visibilityState === 'visible') tickUI(); } }, 250);
+document.addEventListener('visibilitychange', () => { reconcile(); render(); syncWakeLock(); });
+window.addEventListener('focus', () => { reconcile(); tickUI(); });
+window.addEventListener('pageshow', () => { reconcile(); render(); });
+// ほかのタブで変わったら合わせる
+window.addEventListener('storage', e => { if (e.key === KEY) { try { S = normalize(JSON.parse(e.newValue)); render(); schedule(); } catch (_) { } } });
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+}
+// テスト用の入口（?fast があるときだけ）
+if (FAST > 1) window.__pomo = { get S() { return S; }, reconcile, completeTask, spin, exchange, importText, render, showTab };
+</script>
+</body>
+</html>
