@@ -429,6 +429,10 @@ dialog::backdrop { background: rgba(30, 18, 12, .45); }
       <div class="set-row"><span class="small muted">音の確認</span><button class="btn sm ghost" type="button" id="testSound">🔔 鳴らしてみる</button></div>
       <div class="set-row"><span>通知 <span class="small muted" id="notifState"></span></span><button class="btn sm ghost" type="button" id="notifBtn">通知をオンにする</button></div>
       <p class="small muted" style="margin:0">ほかのタブを見ている間も、終わったら通知でお知らせします。スマホで画面を消している間は、端末によって通知が遅れることがあります（タイマーの時間そのものはずれません）。</p>
+      <div id="pushBox" hidden>
+        <div class="set-row"><span>画面を消していても通知する <span class="small muted" id="pushState"></span></span><label class="switch"><input type="checkbox" id="pushSw" aria-label="画面を消していても通知する"><i></i></label></div>
+        <p class="small muted" style="margin:6px 0 0">iPhone 向け。スタートしたときに「○時に通知して」を通知用のサーバーに預けて、時間になったらサーバーから通知を送ります。預けるのは通知の宛先と終わる時刻だけで、タスク名などは送りません。iPhone はホーム画面に追加したアプリから開いたときだけ使えます。</p>
+      </div>
     </div>
     <h2>見た目</h2>
     <div class="card set-grid">
@@ -485,8 +489,11 @@ const DEF_SETTINGS = {
   autoBreak: true, wakeLock: false,
   ptPomo: 10, ptDone: 20, gacha: true, ptThree: 30,
   guard: true, ptGuard: 5,
-  sound: true, notify: false, theme: 'auto'
+  sound: true, notify: false, serverPush: false, theme: 'auto'
 };
+// 画面を消していても通知するためのサーバー（projects/pomo-push）。空なら機能ごと隠す
+const PUSH_API = '';
+const VAPID_PUBLIC = 'BF4Zw7ElDfp-q9j-e0ZDWjVfBT8YJw6VCjseW-VdvttAtU7ChsWNP6JCuFT7vOCDfPSZzrp6tEDs6RnmfZV1p78';
 const AWAY_MIN_MS = 3000; // これより短い離脱は数えない（うっかり切りかえ用）
 const EMOJIS = ['🍰', '🎮', '📺', '☕', '🍜', '🛁', '📚', '🛍️', '😴', '🎧', '🍺', '🌳'];
 const GACHA = [ // 合計1.0。お金は一切かからない、おまけのポイント
@@ -616,14 +623,81 @@ async function askNotify() {
     toast(r === 'granted' ? '通知をオンにしました' : '通知はオフのままです');
   } catch (e) { toast('通知を設定できませんでした'); }
 }
-async function notify(title, body) {
+async function notify(title, body, timerEnd) {
   if (!S.settings.notify || notifState() !== 'granted') return;
+  if (timerEnd && pushOn()) return; // 終わりの通知はサーバーから届くので、二重に出さない
   const opt = { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'pomo', renotify: true };
   try {
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
     if (reg) { await reg.showNotification(title, opt); return; }
   } catch (e) { /* 下で通常の通知 */ }
   try { new Notification(title, opt); } catch (e) { }
+}
+
+/* ---------- 画面を消していても通知（サーバー経由） ----------
+   タイマーが変わるたび（schedule() から）今の予約をサーバーに丸ごと送り直す。止まっていれば取り消し。
+   iPhone は購読がまれに切れるので、開くたびに購読を確かめて送り直す */
+const pushSupported = () => !!(PUSH_API && FAST === 1 && 'serviceWorker' in navigator && 'PushManager' in window && window.isSecureContext);
+const pushOn = () => pushSupported() && S.settings.serverPush && notifState() === 'granted' && pushOK;
+let pushOK = false, pushSig = null, pushBusy = null;
+function b64uToBytes(s) { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+async function pushSubscription(create) {
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub && create) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(VAPID_PUBLIC) });
+  return sub;
+}
+function pushItems() {
+  const t = S.timer;
+  if (!t || t.pausedLeft || Date.now() >= t.endsAt) return [];
+  const items = [{ at: t.endsAt, kind: t.phase }];
+  if (t.phase === 'focus' && S.settings.autoBreak) {
+    const brk = (S.cycle + 1) % S.settings.longEvery === 0 ? 'long' : 'short';
+    items.push({ at: t.endsAt + durOf(brk), kind: brk });
+  }
+  return items;
+}
+async function syncPush(force) {
+  if (!pushSupported() || !S.settings.serverPush) return;
+  const items = pushItems();
+  const sig = JSON.stringify(items);
+  if (!force && sig === pushSig) return;
+  pushSig = sig;
+  if (!S.pushId) { S.pushId = uid() + uid() + uid(); save(); }
+  try {
+    const body = items.length ? { id: S.pushId, sub: (await pushSubscription(true)).toJSON(), items } : { id: S.pushId };
+    const r = await fetch(PUSH_API + (items.length ? '/schedule' : '/cancel'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true });
+    pushOK = r.ok;
+  } catch (e) { pushOK = false; pushSig = null; }
+  renderPush();
+}
+async function setServerPush(on) {
+  if (!on) {
+    S.settings.serverPush = false; save();
+    try { if (S.pushId) await fetch(PUSH_API + '/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: S.pushId }) }); } catch (e) { }
+    pushOK = false; pushSig = null; renderPush(); toast('サーバーからの通知をオフにしました'); return;
+  }
+  if (!pushSupported()) { toast('iPhone は、ホーム画面に追加したアプリから開くと使えます'); renderPush(); return; }
+  if (notifState() !== 'granted') {
+    await askNotify();
+    if (notifState() !== 'granted') { renderPush(); return; }
+  }
+  try {
+    await pushSubscription(true);
+    S.settings.serverPush = true; S.settings.notify = true; save();
+    pushOK = true; await syncPush(true);
+    toast(pushOK ? '画面を消していても通知が届くようにしました' : '通知サーバーにつながりませんでした。あとでもう一度ためしてください');
+  } catch (e) {
+    S.settings.serverPush = false; save();
+    toast('通知の登録ができませんでした：' + (e && e.message || e));
+  }
+  renderSettings();
+}
+function renderPush() {
+  const box = $('#pushBox'); if (!box) return;
+  box.hidden = !PUSH_API;
+  $('#pushSw').checked = !!S.settings.serverPush;
+  $('#pushState').textContent = !S.settings.serverPush ? '' : !pushSupported() ? '（このブラウザでは使えません）' : pushOK ? '（オン）' : '（つながっていません）';
 }
 
 /* ---------- 画面をつけたままにする ---------- */
@@ -746,9 +820,9 @@ function onFinished(list) {
   chime(kind);
   if (kind === 'focus') {
     const task = taskById(last.taskId);
-    notify('🍅 集中おわり！ +' + last.pt + 'pt', (task ? task.title + ' ・ ' : '') + (last.next === 'long' ? '長い休憩' : '休憩') + 'しましょう');
+    notify('🍅 集中おわり！ +' + last.pt + 'pt', (task ? task.title + ' ・ ' : '') + (last.next === 'long' ? '長い休憩' : '休憩') + 'しましょう', true);
   } else {
-    notify('☕ 休憩おわり', 'つぎの集中を始めましょう');
+    notify('☕ 休憩おわり', 'つぎの集中を始めましょう', true);
   }
   render();
   if (focusDone.length) {
@@ -789,6 +863,7 @@ function schedule() {
     const ms = S.timer.endsAt - Date.now();
     schedT = setTimeout(() => { reconcile(); tickUI(); }, clamp(ms + 30, 0, 2147483000));
   }
+  syncPush();
 }
 
 /* ---------- タスク ---------- */
@@ -1132,6 +1207,7 @@ function renderSettings() {
   nb.textContent = ns === 'granted' ? (S.settings.notify ? '通知をオフにする' : '通知をオンにする') : '通知をオンにする';
   nb.disabled = ns === 'unsupported';
   $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.settings.theme));
+  renderPush();
   applyTheme();
 }
 function applyTheme() {
@@ -1232,6 +1308,7 @@ $('#notifBtn').addEventListener('click', () => {
   if (notifState() === 'granted') { S.settings.notify = !S.settings.notify; save(); renderSettings(); toast(S.settings.notify ? '通知をオンにしました' : '通知をオフにしました'); }
   else askNotify();
 });
+$('#pushSw').addEventListener('change', e => setServerPush(e.target.checked));
 $('#testSound').addEventListener('click', () => { audio(); const s = S.settings.sound; S.settings.sound = true; chime('focus'); S.settings.sound = s; });
 $('#themeSeg').addEventListener('click', e => { const b = e.target.closest('[data-theme]'); if (!b) return; S.settings.theme = b.dataset.theme; save(); renderSettings(); });
 
@@ -1265,6 +1342,7 @@ setEst(1);
 render();
 reconcile();
 schedule();
+if (S.settings.serverPush) syncPush(true); // 開くたびに購読を確かめて予約を送り直す
 setInterval(() => { if (S.timer) { reconcile(); if (document.visibilityState === 'visible') tickUI(); } }, 250);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') onHide(); else onShow();

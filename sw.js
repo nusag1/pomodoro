@@ -1,6 +1,6 @@
 // ポモとごほうび：オフラインでも開けるようにするサービスワーカー
 // 中身を変えたら VERSION を上げる
-const VERSION = 'pomo-v2';
+const VERSION = 'pomo-v3';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -33,5 +33,13 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
     for (const c of cs) if ('focus' in c) return c.focus();
     return self.clients.openWindow('./');
+  }));
+});
+// サーバー（pomo-push）からの通知：画面を消していても届く。文言はサーバー側で固定
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { }
+  e.waitUntil(self.registration.showNotification(d.title || 'ポモとごほうび', {
+    body: d.body || '', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'pomo', renotify: true
   }));
 });
